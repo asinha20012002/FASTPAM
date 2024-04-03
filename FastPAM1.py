@@ -20,7 +20,7 @@ def assign_clusters(data, medoids):
     return clusters
 
 # fastpam1
-def pam(data, k, max_iterations=100):
+def pam(data, k, max_iterations=1000):
     l = len(data)
     if k == 1:
         medoid = np.median(data, axis=0)
@@ -30,19 +30,25 @@ def pam(data, k, max_iterations=100):
         medoids = np.random.choice(range(l), k, replace=False)
         # medoids = np.arange(k)
         # print(medoids)
-        clusters = assign_clusters(data, medoids)
-        old_cost = total_cost(data, medoids, clusters)
-        td = old_cost
+        
 
         # Main loop for FASTPAM1 algorithm
         for _ in range(max_iterations):
             clusters = assign_clusters(data, medoids)
+            for medoid in medoids:
+                medoid_points = [data[j] for j in clusters[medoid]]
+                medoid_point = np.median(medoid_points, axis=0)
+                medoid = np.argmin(np.sum((medoid_points - medoid_point) ** 2, axis=1))
+                
+            old_cost = total_cost(data, medoids, clusters)
+            td = old_cost
             nearest_medoids = {}
             second_nearest_medoids = {}
             
             for i in range(l):
-                nearest_medoids[i] = min(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))
-                second_nearest_medoids[i] = sorted(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))[1]
+                arr = sorted(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))
+                nearest_medoids[i] = arr[0]
+                second_nearest_medoids[i] = arr[1]
 
             DelTDF = 0  # Change in total deviation
             mstar = -1
@@ -58,7 +64,7 @@ def pam(data, k, max_iterations=100):
                 for i in medoids:
                     DelTD[i] = -dj
                     
-                for xo, point in enumerate(data):
+                for xo, _ in enumerate(data):
                     if xo == xj:
                         continue
                     doj = euclidean_distance(data[xo], data[xj])
@@ -79,7 +85,9 @@ def pam(data, k, max_iterations=100):
             if DelTDF >= 0:
                 break
             medoids = np.append(np.delete(medoids, np.where(medoids == mstar)), xstar)
-            td = td + DelTDF  
+            td = td + DelTDF 
+            
+         
 
         return td, medoids, clusters
 
@@ -94,16 +102,16 @@ if __name__ == "__main__":
 
     # Example usage
     # Generate some random data points
-    np.random.seed(0)
-    X = np.random.randn(100, 2)
+    # np.random.seed(0)
+    # X = np.random.randn(100, 2)
     
     X = df.to_numpy()
 
     # Number of clusters
-    k = 2
+    # k = 2
     # Example usage
     # X = np.array([[3, 4], [9, 10], [5, 6], [7, 8], [1, 2]])
-    # k = 4
+    k = 2
 
     # Run PAM algorithm
     start_time = time.time()
@@ -120,13 +128,13 @@ if __name__ == "__main__":
         
     # Find the minimum total deviation among medoid configurations
     min_td, min_medoids, min_clusters = td, medoids, clusters
-    for _ in range(10):  # Run the algorithm multiple times to find the configuration with the minimum total deviation
-        td, medoids, clusters = pam(X, k)
-        if td < min_td:
-            min_td, min_medoids, min_clusters = td, medoids, clusters
+    # for _ in range(10):  # Run the algorithm multiple times to find the configuration with the minimum total deviation
+    #     td, medoids, clusters = pam(X, k)
+    #     if td < min_td:
+    #         min_td, min_medoids, min_clusters = td, medoids, clusters
 
     # Print results with minimum total deviation
-    print("Medoids:", X[min_medoids])
+    # print("Medoids:", X[min_medoids])
     print(np.sqrt(min_td))
     # for medoid_idx, cluster_points in min_clusters.items():
     #     print(f"Cluster {X[medoid_idx]}: {X[cluster_points]}")

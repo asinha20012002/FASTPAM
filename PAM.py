@@ -22,7 +22,7 @@ def assign_clusters(data, medoids):
         clusters[closest_medoid].append(i)
     return clusters
 
-def pam(data, k, max_iterations=100):
+def pam(data, k, max_iterations=1000):
     """Partitioning Around Medoids (PAM) algorithm."""
     l = len(data)
     # Initialize medoids: select k random data points as initial medoids
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     file_name = "Haberman.csv"
     df = pd.read_csv(file_name, header=None)
     # np.random.seed(0)
-    X = np.random.randn(100, 2)
+    # X = np.random.randn(100, 2)
     X = df.to_numpy()
 
     # # Number of clusters
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     td, medoids, clusters = pam(X, k)
     end_time = time.time()
     print(end_time-start_time)
-    print("Medoids:", X[medoids])
+    # print("Medoids:", X[medoids])
     print(np.sqrt(td))
     # for medoid_idx, cluster_points in clusters.items():
     #     print(f"Cluster {X[medoid_idx]}: {X[cluster_points]}")

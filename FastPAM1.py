@@ -1,13 +1,11 @@
-# Import necessary libraries
 import numpy as np
 import pandas as pd
 import time
+import os
 
-# Function to calculate Euclidean distance between two points
 def euclidean_distance(x1, x2):
     return np.linalg.norm(x1 - x2)
 
-# Function to calculate total cost of clustering
 def total_cost(data, medoids, clusters):
     cost = 0
     for medoid_idx in medoids:
@@ -15,7 +13,6 @@ def total_cost(data, medoids, clusters):
             cost += euclidean_distance(data[j], data[medoid_idx])
     return cost
 
-# Function to assign data points to clusters
 def assign_clusters(data, medoids):
     clusters = {medoid_idx: [] for medoid_idx in medoids}
     for i, point in enumerate(data):
@@ -23,43 +20,39 @@ def assign_clusters(data, medoids):
         clusters[closest_medoid].append(i)
     return clusters
 
-# PAM (Partitioning Around Medoids) algorithm
+# fastpam1
 def pam(data, k, max_iterations=1000):
     l = len(data)
-    # If only one cluster is requested, return the whole dataset as a single cluster
     if k == 1:
         medoid = np.median(data, axis=0)
         medoid_idx = np.argmin(np.sum((data - medoid) ** 2, axis=1))
         return [medoid_idx], {medoid_idx: list(range(l))}
     else:
-        # Initialize medoids randomly
         medoids = np.random.choice(range(l), k, replace=False)
+        # medoids = np.arange(k)
+        # print(medoids)
+        
 
         # Main loop for FASTPAM1 algorithm
         for _ in range(max_iterations):
             clusters = assign_clusters(data, medoids)
             for medoid in medoids:
-                # Update each medoid to the point with the minimum total distance to other points in its cluster
                 medoid_points = [data[j] for j in clusters[medoid]]
                 medoid_point = np.median(medoid_points, axis=0)
                 medoid = np.argmin(np.sum((medoid_points - medoid_point) ** 2, axis=1))
-                
             old_cost = total_cost(data, medoids, clusters)
             td = old_cost
             nearest_medoids = {}
             second_nearest_medoids = {}
             
-            # Pre-calculate nearest and second nearest medoids for each data point
             for i in range(l):
-                arr = sorted(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))
-                nearest_medoids[i] = arr[0]
-                second_nearest_medoids[i] = arr[1]
+                nearest_medoids[i] = min(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))
+                second_nearest_medoids[i] = sorted(medoids, key=lambda medoid_idx: euclidean_distance(data[i], data[medoid_idx]))[1]
 
             DelTDF = 0  # Change in total deviation
             mstar = -1
             xstar = -1
         
-            # Iterate through each data point to find potential swaps
             for xj, _ in enumerate(data):
                 if xj in medoids:
                     continue
@@ -67,11 +60,10 @@ def pam(data, k, max_iterations=1000):
 
                 DelTD ={i: 0 for i in range(l)}
                 
-                # Calculate change in total deviation if xj is swapped with each medoid
                 for i in medoids:
                     DelTD[i] = -dj
                     
-                for xo, _ in enumerate(data):
+                for xo, point in enumerate(data):
                     if xo == xj:
                         continue
                     doj = euclidean_distance(data[xo], data[xj])
@@ -84,7 +76,7 @@ def pam(data, k, max_iterations=1000):
                             if i == n:
                                 continue
                             DelTD[i] += doj - dn
-                i = np.argmin(list(DelTD.values()))  # Get index of minimum value in DelTD
+                i = np.argmin(DelTD)  # Get index of minimum value in DelTD
                 if DelTD[i] < DelTDF:
                     DelTDF = DelTD[i]
                     mstar = medoids[i]
@@ -92,31 +84,47 @@ def pam(data, k, max_iterations=1000):
             if DelTDF >= 0:
                 break
             medoids = np.append(np.delete(medoids, np.where(medoids == mstar)), xstar)
-            td = td + DelTDF 
-            
-         
+            td = td + DelTDF  
 
         return td, medoids, clusters
 
-# Main execution
-if __name__ == "__main__":
-    # Load dataset
-    file_name = "Haberman.csv"
-    df = pd.read_csv(file_name, header=None)
+
+
+# Function to run PAM on a file
+def run_pam_on_file(file_path):
+    df = pd.read_csv(file_path, header=None)
     X = df.to_numpy()
-
-    # Number of clusters
-    k = 2
-
+    k = 2  # Number of clusters
+    
     # Run PAM algorithm
     start_time = time.time()
-    td, medoids, clusters = pam(X, k)
+    td, medoids, clusters = pam(X, k)  # Ignore returned medoids and clusters
     end_time = time.time()
     
-    print(end_time - start_time)
-        
-    # Find the minimum total deviation among medoid configurations
+    # Calculate duration
+    duration = end_time - start_time
     min_td, min_medoids, min_clusters = td, medoids, clusters
+    for _ in range(10):  # Run the algorithm multiple times to find the configuration with the minimum total deviation
+        td, medoids, clusters = pam(X, k)
+        if td < min_td:
+            min_td, min_medoids, min_clusters = td, medoids, clusters
     
-    # Print results with minimum total deviation
-    print(np.sqrt(min_td))
+    # Print min_td and time taken
+    print("File:", file_path)
+    print("Min_td:", np.sqrt(min_td))
+    print("Time taken:", duration, "seconds\n")
+    print("")
+
+# Main execution
+if __name__ == "__main__":
+    # Directory containing CSV files
+    directory = "featurevector"
+
+    # List all CSV files in the directory
+    csv_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.csv')]
+
+    # Iterate over each CSV file and run PAM algorithm
+    for file_path in csv_files:
+        run_pam_on_file(file_path)
+    
+    # run_pam_on_file("featurevector/seed.csv")

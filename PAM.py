@@ -58,19 +58,13 @@ def pam(data, k, max_iterations=1000):
 if __name__ == "__main__":
     file_name = "Haberman.csv"
     df = pd.read_csv(file_name, header=None)
-    # np.random.seed(0)
-    # X = np.random.randn(100, 2)
     X = df.to_numpy()
 
     # # Number of clusters
     k = 2
-    # X = np.array([[3, 4], [9, 10], [5, 6], [7, 8], [1, 2]])
-    # k = 4
     start_time = time.time()
     td, medoids, clusters = pam(X, k)
     end_time = time.time()
     print(end_time-start_time)
-    # print("Medoids:", X[medoids])
+    
     print(np.sqrt(td))
-    # for medoid_idx, cluster_points in clusters.items():
-    #     print(f"Cluster {X[medoid_idx]}: {X[cluster_points]}")

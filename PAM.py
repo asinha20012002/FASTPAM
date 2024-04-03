@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import pandas as pd
+import os
 
 def euclidean_distance(x1, x2):
     """Compute the Euclidean distance between two points."""
@@ -54,17 +55,32 @@ def pam(data, k, max_iterations=1000):
 
     return td, medoids, clusters
 
-# Example usage
-if __name__ == "__main__":
-    file_name = "Haberman.csv"
-    df = pd.read_csv(file_name, header=None)
+# Function to run PAM on a file
+def run_pam_on_file(file_path):
+    df = pd.read_csv(file_path, header=None)
     X = df.to_numpy()
-
-    # # Number of clusters
-    k = 2
-    start_time = time.time()
-    td, medoids, clusters = pam(X, k)
-    end_time = time.time()
-    print(end_time-start_time)
+    k = 2  # Number of clusters
     
-    print(np.sqrt(td))
+    # Run PAM algorithm
+    start_time = time.time()
+    td, medoids, clusters = pam(X, k)  # Ignore returned medoids and clusters
+    end_time = time.time()
+    duration = end_time - start_time
+    # Print min_td and time taken
+    print("File:", file_path)
+    print("Min_td:", np.sqrt(td))
+    print("Time taken:", duration, "seconds\n")
+    print("")
+
+# Main execution
+if __name__ == "__main__":
+    # Directory containing CSV files
+    directory = "featurevector"
+
+    # List all CSV files in the directory
+    csv_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.csv')]
+
+    # Iterate over each CSV file and run PAM algorithm
+    for file_path in csv_files:
+        run_pam_on_file(file_path)
+    

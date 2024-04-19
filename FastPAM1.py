@@ -107,11 +107,9 @@ def compute_inclusion_probability(deviations, N):
     
 def inclusionProbablities(X, N):
     max_values = np.max(X, axis=0)
-    
     # Compute the deviation for each data point
     deviations = np.sum(max_values - X, axis=1)
     # print(deviations[:10])
-    
     return compute_inclusion_probability(deviations, N)
 
     
